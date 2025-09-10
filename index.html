@@ -1,45 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
-  <title>Monthly Card Spend</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Card Spend</title>
   <style>
-    body{font-family:system-ui,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 16px}
+    body{font-family:system-ui,Arial;max-width:700px;margin:40px auto;padding:0 16px}
     button{padding:10px 14px;border:0;border-radius:10px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-right:8px}
     pre{white-space:pre-wrap;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px;margin-top:16px}
   </style>
 </head>
 <body>
   <h1>Monthly Card Spend</h1>
-  <p>Click <em>Trigger</em> to run your n8n workflow. Then use <em>Download</em> to save the JSON.</p>
   <button id="trigger">Trigger</button>
   <button id="download" disabled>Download Output</button>
   <pre id="out">No output yet.</pre>
 
   <script>
-    const WEBHOOK = "https://kshitijvishnoi.app.n8n.cloud/webhook/e741de4c-72b0-46d6-b855-a6bd4f373a62"; // e.g. https://.../webhook/abc123
+    const WEBHOOK = "https://kshitijvishnoi.app.n8n.cloud/webhook/e741de4c-72b0-46d6-b855-a6bd4f373a62"; // e.g. https://<subdomain>.app.n8n.cloud/webhook/<path>
     let lastJson = null;
-
-    function download(filename, text) {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([text], {type: 'application/json'}));
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
 
     document.getElementById('trigger').onclick = async () => {
       const out = document.getElementById('out');
       const btnDl = document.getElementById('download');
-      out.textContent = "Running…";
+      out.textContent = "Fetching…";
       btnDl.disabled = true;
       try {
-        const res = await fetch(WEBHOOK, {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ range: "prev-month" }) // or {} if your flow ignores it
-        });
+        // GET with no custom headers keeps it a "simple" request
+        const res = await fetch(WEBHOOK);  // add ?range=prev-month if you need params
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         lastJson = await res.json();
         out.textContent = JSON.stringify(lastJson, null, 2);
@@ -50,12 +37,13 @@
     };
 
     document.getElementById('download').onclick = () => {
-      if (lastJson) download("card_spend.json", JSON.stringify(lastJson, null, 2));
+      if (!lastJson) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(lastJson, null, 2)], {type: 'application/json'}));
+      a.download = "card_spend.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
     };
   </script>
 </body>
 </html>
-
-
-
-
